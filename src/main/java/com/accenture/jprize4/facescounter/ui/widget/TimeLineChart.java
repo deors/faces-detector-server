@@ -10,6 +10,8 @@ import com.vaadin.addon.charts.model.Series;
 import com.vaadin.ui.CustomComponent;
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +26,8 @@ public class TimeLineChart extends CustomComponent implements Subscriptor<Monito
     private final Chart chart = new Chart();
     private final Configuration chartConfiguration;
     private final String topic;
+    // Make the chart more stable
+    private final ConcurrentMap<String, Boolean> mapReceivedEvents = new ConcurrentHashMap<>();
 
     public TimeLineChart(String topic) {
         super();
@@ -33,7 +37,7 @@ public class TimeLineChart extends CustomComponent implements Subscriptor<Monito
         chart.setCaption(topic);
         chartConfiguration = chart.getConfiguration();
         clock.scheduleAtFixedRate(() -> {
-            addPointAll(0);
+            reset();
         }, 4000, 1000, TimeUnit.MILLISECONDS);
         super.setCompositionRoot(chart);
     }
@@ -81,13 +85,19 @@ public class TimeLineChart extends CustomComponent implements Subscriptor<Monito
                 chartConfiguration.addSeries(series);
                 chart.drawChart();
             }
+            mapReceivedEvents.put(id, true);
         });
     }
     
-    private void addPointAll(int y) {      
+    private void reset() {      
         final List<Series> seriesList = chartConfiguration.getSeries();
         seriesList.stream().forEach((s) -> {
-            addPoint(s.getId(), y);
+            final Boolean receivedEvent = mapReceivedEvents.get(s.getId());
+            if (receivedEvent) {
+                mapReceivedEvents.put(s.getId(), false);
+            } else {
+                addPoint(s.getId(), 0);
+            }
         });
     }
 
