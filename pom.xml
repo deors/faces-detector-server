@@ -9,7 +9,7 @@
     <!--<packaging>jar</packaging>-->
     <packaging>war</packaging>
 
-    <name>faces-detector-server</name>
+    <name>Faces Detector OpenShift</name>
     <description>Demo project for Spring Boot</description>
 
     <parent>
