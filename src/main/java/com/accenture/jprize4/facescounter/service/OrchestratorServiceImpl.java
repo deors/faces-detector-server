@@ -17,6 +17,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.omg.CORBA.MARSHAL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -100,8 +101,11 @@ public class OrchestratorServiceImpl implements OrchestratorService, MqttCallbac
             while (it.hasNext()) {
                 final Subscriptor subscriptor = it.next();
                 if (subscriptor.isConnected()) {
-                    executorService.execute(() -> {
-                        subscriptor.receiveEvent(event);
+                    executorService.execute(new Runnable() {
+                        @Override
+                        public void run() {                            
+                            subscriptor.receiveEvent(event);
+                        }
                     });
                 } else {
                     it.remove();
@@ -139,9 +143,14 @@ public class OrchestratorServiceImpl implements OrchestratorService, MqttCallbac
 //                LOG.debug("Removing listener {} from topic {}", subscriptor, entry.getKey());
 //            }
 //        }
-        mapSubscriptor.entrySet().stream().filter((entry) -> (entry.getValue().remove(subscriptor))).forEach((entry) -> {
-            LOG.debug("Removing listener {} from topic {}", subscriptor, entry.getKey());
-        });
+//        mapSubscriptor.entrySet().stream().filter((entry) -> (entry.getValue().remove(subscriptor))).forEach((entry) -> {
+//            LOG.debug("Removing listener {} from topic {}", subscriptor, entry.getKey());
+//        });
+        for (Map.Entry<String, Set<Subscriptor<MonitorInfo>>> entry : mapSubscriptor.entrySet()) {
+            if (entry.getValue().remove(subscriptor)) {
+                LOG.debug("Removing listener {} from topic {}", subscriptor, entry.getKey());
+            }
+        }
     }
 
     @Override

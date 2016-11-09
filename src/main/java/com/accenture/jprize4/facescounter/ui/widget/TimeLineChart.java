@@ -36,8 +36,11 @@ public class TimeLineChart extends CustomComponent implements Subscriptor<Monito
         chart.setSizeFull();
         chart.setCaption(topic);
         chartConfiguration = chart.getConfiguration();
-        clock.scheduleAtFixedRate(() -> {
-            reset();
+        clock.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                reset();
+            }
         }, 4000, 1000, TimeUnit.MILLISECONDS);
         super.setCompositionRoot(chart);
     }
@@ -65,40 +68,44 @@ public class TimeLineChart extends CustomComponent implements Subscriptor<Monito
         super.detach();
     }
     
-    private void addPoint(String id, int y) {
-        super.getUI().access(() -> {
-            final DataSeriesItem dsi = new DataSeriesItem(Calendar.getInstance().getTime(), y);
-            boolean found = false;
-            final List<Series> seriesList = chartConfiguration.getSeries();
-            if (seriesList != null) {
-                for (Series series : seriesList) {
-                    if (series.getId().equals(id)) {
-                        found = true;
-                        ((DataSeries) series).add(dsi, true, false);
+    private void addPoint(final String id, final int y) {
+        super.getUI().access(new Runnable() {
+            @Override
+            public void run() {
+                
+                final DataSeriesItem dsi = new DataSeriesItem(Calendar.getInstance().getTime(), y);
+                boolean found = false;
+                final List<Series> seriesList = chartConfiguration.getSeries();
+                if (seriesList != null) {
+                    for (Series series : seriesList) {
+                        if (series.getId().equals(id)) {
+                            found = true;
+                            ((DataSeries) series).add(dsi, true, false);
+                        }
                     }
                 }
+                if (!found) {
+                    final DataSeries series = new DataSeries(id);
+                    series.setId(id);
+                    series.add(dsi);
+                    chartConfiguration.addSeries(series);
+                    chart.drawChart();
+                }
+                mapReceivedEvents.put(id, true);
             }
-            if (!found) {
-                final DataSeries series = new DataSeries(id);
-                series.setId(id);
-                series.add(dsi);
-                chartConfiguration.addSeries(series);
-                chart.drawChart();
-            }
-            mapReceivedEvents.put(id, true);
         });
     }
     
     private void reset() {      
         final List<Series> seriesList = chartConfiguration.getSeries();
-        seriesList.stream().forEach((s) -> {
+        for (Series s : seriesList) {
             final Boolean receivedEvent = mapReceivedEvents.get(s.getId());
             if (receivedEvent) {
                 mapReceivedEvents.put(s.getId(), false);
             } else {
                 addPoint(s.getId(), 0);
             }
-        });
+        }
     }
 
 }

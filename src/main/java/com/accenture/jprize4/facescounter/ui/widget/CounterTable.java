@@ -25,18 +25,22 @@ public class CounterTable extends Table implements Subscriptor<MonitorInfo> {
     }
 
     @Override
-    public void receiveEvent(MonitorInfo event) {
+    public void receiveEvent(final MonitorInfo event) {
         if (topic.equals(event.getTopic())) {
-            super.getUI().access(() -> {
-                final BeanItem<MonitorInfo> item = datasource.getItem(event);
-                if (item == null) {
-                    datasource.addItem(event);
-                } else {
-                    final MethodProperty<Integer> property =
-                            (MethodProperty<Integer>) item.getItemProperty("counter");
-                    property.setValue(property.getValue() + event.getCounter());
-                    // Forces a value change so the grid value is updated
-                    property.fireValueChange();
+            super.getUI().access(new Runnable() {
+                @Override
+                public void run() {
+                    
+                    final BeanItem<MonitorInfo> item = datasource.getItem(event);
+                    if (item == null) {
+                        datasource.addItem(event);
+                    } else {
+                        final MethodProperty<Integer> property =
+                                (MethodProperty<Integer>) item.getItemProperty("counter");
+                        property.setValue(property.getValue() + event.getCounter());
+                        // Forces a value change so the grid value is updated
+                        property.fireValueChange();
+                    }
                 }
             });
         }

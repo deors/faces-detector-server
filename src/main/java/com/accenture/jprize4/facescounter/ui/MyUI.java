@@ -49,15 +49,18 @@ public class MyUI extends UI {
         topicTextField.setSizeFull();
 
         final Button button = new Button("Subscribe");
-        button.addClickListener(e -> {
-            try {
-//                final CounterTable customComponent = new CounterTable(topicTextField.getValue());
-                final TimeLineChart customComponent = new TimeLineChart(topicTextField.getValue());
-                service.subscribe(customComponent, topicTextField.getValue());
-                tablesLayout.addComponent(customComponent);
-            } catch (MqttException ex) {
-                final Notification notification = new Notification("Error", ex.getMessage());
-                notification.show(Page.getCurrent());
+        button.addClickListener(new Button.ClickListener() {
+            @Override
+            public void buttonClick(Button.ClickEvent event) {                
+                try {
+    //                final CounterTable customComponent = new CounterTable(topicTextField.getValue());
+                    final TimeLineChart customComponent = new TimeLineChart(topicTextField.getValue());
+                    service.subscribe(customComponent, topicTextField.getValue());
+                    tablesLayout.addComponent(customComponent);
+                } catch (MqttException ex) {
+                    final Notification notification = new Notification("Error", ex.getMessage());
+                    notification.show(Page.getCurrent());
+                }
             }
         });
         
